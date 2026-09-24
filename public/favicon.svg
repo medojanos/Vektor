@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="favBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0B0F19" />
+      <stop offset="100%" stop-color="#111827" />
+    </linearGradient>
+
+    <!-- Vibrant Route Gradient -->
+    <linearGradient id="favRoute" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00F2FE" />
+      <stop offset="100%" stop-color="#4FACFE" />
+    </linearGradient>
+
+    <!-- Glow Filter -->
+    <filter id="favGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="2" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Rounded App Icon Background -->
+  <rect width="100" height="100" rx="22" fill="url(#favBg)" />
+
+  <!-- Simplified Vector Route Path -->
+  <path d="M 25 70 L 45 55 L 65 35 L 75 25" 
+        fill="none" 
+        stroke="url(#favRoute)" 
+        stroke-width="7" 
+        stroke-linecap="round" 
+        stroke-linejoin="round"
+        filter="url(#favGlow)" />
+
+  <!-- Origin Point -->
+  <circle cx="25" cy="70" r="4.5" fill="#00F2FE" />
+
+  <!-- Destination Point / Arrow Indicator -->
+  <g transform="translate(75, 25) rotate(-45)">
+    <polygon points="0,-7 6,6 0,2 -6,6" fill="#ffffff" filter="url(#favGlow)" />
+  </g>
+</svg>

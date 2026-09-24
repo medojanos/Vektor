@@ -1,0 +1,38 @@
+body, html {
+    margin: 0;
+    padding: 0;
+}
+
+#root {
+    display: flex;
+    height: 100vh;
+    flex-direction: column;
+}
+
+body {
+    background-color: #010736;
+    color: whitesmoke;
+}
+
+header {
+    background-color: #0D1C42;
+    padding: 10px;
+}
+
+.button {
+    border: none;
+    border-radius: 8px;
+    background-color: #03346E;
+    color: inherit;
+    padding: 10px 20px;
+    transition: 0.3s;
+}
+.button:hover {
+    filter: brightness(1.5);
+    transition: 0.3s;
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+}
