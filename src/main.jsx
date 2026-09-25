@@ -6,6 +6,7 @@ import './index.css'
 
 import Dashboard from './pages/Dashboard.jsx'
 import Home from './pages/Home.jsx'
+import App from "./pages/App.jsx"
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -13,6 +14,7 @@ createRoot(document.getElementById('root')).render(
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/app" element={<App />} />
       </Routes>
     </BrowserRouter>
   </StrictMode>,

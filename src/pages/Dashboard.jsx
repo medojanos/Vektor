@@ -1,6 +1,15 @@
 import {Link} from 'react-router-dom'
+import {Route} from "../utils/Objects"
+import { useEffect, useState } from 'react';
+import RouteCard from '../components/RouteCard';
 
 export default function Dashboard() {
+  const [routes, setRoute] = useState(JSON.parse(localStorage.getItem("routes")) || []); 
+
+  useEffect(() => {
+    localStorage.setItem("routes", JSON.stringify(routes));
+  }, [routes])
+
   return (
     <>
       <header>
@@ -14,14 +23,25 @@ export default function Dashboard() {
         <p>Create a new route or import one.</p>
         <div>
           <button onClick={() => {
-
+            const newRoute = new Route();
+            setRoute([...routes, newRoute]);
+            localStorage.setItem("selected", JSON.stringify(newRoute));
+            window.location = "/app";
           }} 
-          className="button" style={{marginRight: 10}}>Create new route</button>
-          <button className="button">Import route</button>
+          className="button">Start planning</button>
+          <button className="button">Import</button>
         </div>
-        <div className="mt-5">
+        <div>
           {
-            
+            routes != []
+            ?
+            routes.map((route, index) => (
+              <RouteCard key={index} route={route} onDelete={createdAt => {
+                setRoute(routes.filter(r => r.createdAt !== createdAt));
+              }}/>
+            ))
+            :
+            <p>You don't have any routes yet.</p>
           }
         </div>
       </div>
