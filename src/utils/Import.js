@@ -1,97 +1,56 @@
 import * as XLSX from "xlsx";
-import { Stop } from "./classes";
+import { Stop } from "./Objects.js";
 
-/*
-name           -> 3
-email          -> 4
-phone          -> 5
-price          -> 8
-delivery_price -> 11
-post_number    -> 19
-city           -> 20
-address        -> 21
-address_other  -> 22
-note           -> 27
-package        -> 30
-id             -> 0
-*/
+export default function importExcel(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
 
-export async function importStopsFromExcel(file) {
-  const buffer = await file.arrayBuffer();
+    reader.onload = (event) => {
+      try {
+        const workbook = XLSX.read(event.target.result, {
+          type: "array"
+        });
 
-  const workbook = XLSX.read(buffer, {
-    type: "array",
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+
+        const rows = XLSX.utils.sheet_to_json(sheet, {
+          header: 1,
+          defval: ""
+        });
+
+        const stops = rows
+          .slice(2)
+          .filter(row => row.some(value => value !== ""))
+          .filter(row => row[11] !== "0")
+          .map(row => {
+            return new Stop({
+              id: row[0],
+              name: row[3],
+              email: row[4],
+              phone: row[5],
+
+              price: row[8],
+              deliveryPrice: row[11],
+
+              postalCode: row[19],
+              city: row[20],
+              address: row[21],
+              addressOther: row[22],
+
+              note: row[27],
+              parcel: row[30]
+            });
+          });
+        resolve(stops);
+      } catch (error) {
+        reject(error);
+      }
+    };
+
+    reader.onerror = () => {
+      reject(new Error("Failed to read Excel file."));
+    };
+
+    reader.readAsArrayBuffer(file);
   });
-
-  // Use the first worksheet
-  const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-
-  // Convert Excel sheet to arrays.
-  // header: 1 means each row is returned as an array.
-  const rows = XLSX.utils.sheet_to_json(worksheet, {
-    header: 1,
-    defval: "",
-  });
-
-  const stops = rows
-    .slice(1) // Skip header row
-    .map((row) => {
-      const stop = new Stop();
-
-      stop.name = row[3] || "";
-      stop.email = row[4] || "";
-      stop.phone = row[5] || "";
-
-      stop.price = toNumber(row[8]);
-      stop.deliveryPrice = toNumber(row[11]);
-
-      stop.postalCode = row[19] || "";
-      stop.city = row[20] || "";
-      stop.address = row[21] || "";
-      stop.addressOther = row[22] || "";
-
-      stop.note = row[27] || "";
-      stop.parcel = row[30] || "";
-
-      // Build full address
-      stop.fullAddress = [
-        stop.postalCode,
-        stop.city,
-        stop.address,
-        stop.addressOther,
-      ]
-        .filter(Boolean)
-        .join(", ");
-
-      return stop;
-    })
-    .filter((stop) => {
-      // Ignore completely empty rows
-      return (
-        stop.name ||
-        stop.phone ||
-        stop.address ||
-        stop.city ||
-        stop.parcel
-      );
-    });
-
-  return stops;
-}
-
-function toNumber(value) {
-  if (value === "" || value === null || value === undefined) {
-    return 0;
-  }
-
-  if (typeof value === "number") {
-    return value;
-  }
-
-  // Handles values such as "12,50"
-  const normalized = String(value).replace(",", ".");
-
-  const number = Number(normalized);
-
-  return Number.isNaN(number) ? 0 : number;
 }

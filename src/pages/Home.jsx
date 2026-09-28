@@ -9,7 +9,7 @@ export default function Home() {
             </header>
             <div className="d-flex align-items-center justify-content-center flex-grow-1 flex-column">
                 <img width={300} src={LOGO}></img>
-                <Link to="/dashboard"><button className="button mt-5 fw-bold">Open dashboard</button></Link>
+                <Link to="/dashboard"><button className="mt-5 fw-bold">Open dashboard</button></Link>
             </div>
         </>
     )

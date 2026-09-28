@@ -19,17 +19,17 @@ header {
     padding: 10px;
 }
 
-.button {
+button {
     border: none;
     border-radius: 8px;
     background-color: #03346E;
     color: inherit;
-    padding: 10px 20px;
+    padding: 8px 16px;
     transition: 0.3s;
     margin-left: 5px;
     margin-right: 5px;
 }
-.button:hover {
+button:hover {
     filter: brightness(1.5);
     transition: 0.3s;
 }
@@ -45,10 +45,11 @@ header {
     margin-left: 5px;
     transition: 0.5s;
 }
-#add-stop.collapsed ion-icon {
+#add-stop:not(.collapsed) ion-icon {
     transform: rotate(180deg);
     transition: 0.5s;
 }
+
 
 a {
     text-decoration: none;
@@ -71,4 +72,17 @@ input {
 }
 input:active, input:focus {
     outline: none;
+}
+.stop-card {
+    border: 1px solid #03346E;
+    border-radius: 8px;
+    padding: 10px;
+}
+
+p {
+    margin: 0;
+}
+
+.stop-card a {
+    color: #00BFFF;
 }

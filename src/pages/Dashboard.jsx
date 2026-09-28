@@ -2,6 +2,7 @@ import {Link} from 'react-router-dom'
 import {Route} from "../utils/Objects"
 import { useEffect, useState } from 'react';
 import RouteCard from '../components/RouteCard';
+import importExcel from '../utils/Import.js';
 
 export default function Dashboard() {
   const [routes, setRoute] = useState(JSON.parse(localStorage.getItem("routes")) || []); 
@@ -9,6 +10,12 @@ export default function Dashboard() {
   useEffect(() => {
     localStorage.setItem("routes", JSON.stringify(routes));
   }, [routes])
+
+  function startRoute(newRoute) {
+    setRoute([...routes, newRoute]);
+    localStorage.setItem("selected", JSON.stringify(newRoute));
+    window.location = "/app";
+  }
 
   return (
     <>
@@ -24,21 +31,35 @@ export default function Dashboard() {
         <div>
           <button onClick={() => {
             const newRoute = new Route();
-            setRoute([...routes, newRoute]);
-            localStorage.setItem("selected", JSON.stringify(newRoute));
-            window.location = "/app";
-          }} 
-          className="button">Start planning</button>
-          <button className="button">Import</button>
+            startRoute(newRoute);
+          }}>
+            Start planning
+          </button>
+          <input type='file' accept=".xlsx, .xls" onChange={async (e) => {
+            const file = e.target.files[0];
+            if (file) {
+              try {
+                const stops = await importExcel(file);
+                startRoute(new Route({stops: stops}));
+              } catch (error) {
+                alert("Error importing Excel file:", error);
+              }
+            }
+          }}/>
         </div>
-        <div>
+        <div className="mt-3">
           {
-            routes != []
+            routes.length != 0
             ?
             routes.map((route, index) => (
-              <RouteCard key={index} route={route} onDelete={createdAt => {
-                setRoute(routes.filter(r => r.createdAt !== createdAt));
-              }}/>
+              <RouteCard key={index} route={route} 
+                onDelete={createdAt => {
+                  setRoute(routes.filter(r => r.createdAt !== createdAt));
+                }}
+                onExport={createdAt => {
+                  // Export
+                }}
+              />
             ))
             :
             <p>You don't have any routes yet.</p>
