@@ -7,7 +7,6 @@ export default function RouteCard({route, onDelete, onExport}) {
             <Link to="/app"><button onClick={() => localStorage.setItem("selected", JSON.stringify(route))} className="button">Open</button></Link>
             <button onClick={() => onExport(route.createdAt)}>Export</button>
             <button  onClick={() => onDelete(route.createdAt)} className="button button-warning">Delete</button>
-            <span>{route.createdAt}</span>
         </div>
     )
 }

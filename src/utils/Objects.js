@@ -11,12 +11,13 @@ class Location {
     lng: null
   };
 
-  constructor({postalCode, city, address, addressOther} = {}) {
+  constructor({postalCode, city, address, addressOther, fullAddress, coordinates} = {}) {
     this.postalCode = postalCode || "";
     this.city = city || "";
     this.address = address || "";
     this.addressOther = addressOther || "";
-    this.fullAddress = `${this.postalCode} ${this.city}, ${this.address} ${this.addressOther}`;
+    this.fullAddress = fullAddress || "";
+    this.coordinates = coordinates || null
   }
 }
 
@@ -40,7 +41,7 @@ class Stop {
     durationFromPrevious: 0
   };
 
-  constructor({id, name, email, phone, price, deliveryPrice, parcel, note, postalCode, city, address, addressOther} = {}) {
+  constructor({id, name, email, phone, price, deliveryPrice, parcel, note, postalCode, city, address, addressOther, fullAddress, coordinates} = {}) {
     this.id = id || Date.now();
     this.name = name || "";
     this.email = email || "";
@@ -49,7 +50,7 @@ class Stop {
     this.deliveryPrice = deliveryPrice || 0;
     this.parcel = parcel || "";
     this.note = note || "";
-    this.location = new Location({postalCode, city, address, addressOther});
+    this.location = new Location({postalCode, city, address, addressOther, fullAddress, coordinates});
   }
 }
 

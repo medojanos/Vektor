@@ -1,11 +1,14 @@
 import * as XLSX from "xlsx";
 import { Stop } from "./Objects.js";
+import getCoordinates from "./Coordinates.js"
 
-export default function importExcel(file) {
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+export default function importExcel(file, overrideStops) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
 
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       try {
         const workbook = XLSX.read(event.target.result, {
           type: "array"
@@ -18,29 +21,46 @@ export default function importExcel(file) {
           defval: ""
         });
 
-        const stops = rows
+        const seenIds = new Set(
+          overrideStops?.map(stop => stop.id ?? [])
+        );
+
+        const validRows = rows
           .slice(2)
           .filter(row => row.some(value => value !== ""))
           .filter(row => row[11] !== "0")
-          .map(row => {
-            return new Stop({
-              id: row[0],
-              name: row[3],
-              email: row[4],
-              phone: row[5],
+          .filter(row => !seenIds.has(row[0]))
 
-              price: row[8],
-              deliveryPrice: row[11],
+        const stops = [];
 
-              postalCode: row[19],
-              city: row[20],
-              address: row[21],
-              addressOther: row[22],
+        for (const row of validRows) {
+          const fullAddress = `${row[19]} ${row[20]}, ${row[21]} ${row[22]}`;
+          const coordinates = await getCoordinates(fullAddress);
+          stops.push(
+            new Stop(
+              {
+                id: row[0],
+                name: row[3],
+                email: row[4],
+                phone: row[5],
 
-              note: row[27],
-              parcel: row[30]
-            });
-          });
+                price: row[8],
+                deliveryPrice: row[11],
+
+                postalCode: row[19],
+                city: row[20],
+                address: row[21],
+                addressOther: row[22],
+                fullAddress: fullAddress,
+
+                coordinates: coordinates,
+
+                note: row[27],
+                parcel: row[30],
+              }
+            ));
+          await sleep(1000);
+        }
         resolve(stops);
       } catch (error) {
         reject(error);

@@ -79,10 +79,12 @@ input:active, input:focus {
     padding: 10px;
 }
 
-p {
-    margin: 0;
-}
-
 .stop-card a {
     color: #00BFFF;
+}
+.stop-card button {
+    padding-top: 3px;
+    padding-bottom: 3px;
+    padding-left: 8px;
+    padding-right: 8px;
 }
