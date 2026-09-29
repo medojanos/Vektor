@@ -11,12 +11,12 @@ class Location {
     lng: null
   };
 
-  constructor({postalCode, city, address, addressOther, fullAddress, coordinates} = {}) {
+  constructor({postalCode, city, address, addressOther, coordinates} = {}) {
     this.postalCode = postalCode || "";
     this.city = city || "";
     this.address = address || "";
     this.addressOther = addressOther || "";
-    this.fullAddress = fullAddress || "";
+    this.fullAddress = `${postalCode || ""} ${city} ${address || ""} ${addressOther || ""}`;
     this.coordinates = coordinates || null
   }
 }
@@ -41,7 +41,7 @@ class Stop {
     durationFromPrevious: 0
   };
 
-  constructor({id, name, email, phone, price, deliveryPrice, parcel, note, postalCode, city, address, addressOther, fullAddress, coordinates} = {}) {
+  constructor({id, name, email, phone, price, deliveryPrice, parcel, note, postalCode, city, address, addressOther, coordinates} = {}) {
     this.id = id || Date.now();
     this.name = name || "";
     this.email = email || "";
@@ -50,24 +50,20 @@ class Stop {
     this.deliveryPrice = deliveryPrice || 0;
     this.parcel = parcel || "";
     this.note = note || "";
-    this.location = new Location({postalCode, city, address, addressOther, fullAddress, coordinates});
+    this.location = new Location({postalCode, city, address, addressOther, coordinates});
   }
 }
 
 class Route {
   stops;
-  startingLocation;
-  endLocation;
 
   createdAt;
 
   totalDistance;
   totalDuration;
 
-  constructor({stops, startingLocation, endLocation} = {}) {
+  constructor({stops} = {}) {
     this.stops = stops || [];
-    this.startingLocation = new Location(startingLocation);
-    this.endLocation = new Location(endLocation);
     this.createdAt = Date.now();
   }
 }

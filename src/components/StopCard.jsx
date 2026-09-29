@@ -8,21 +8,22 @@ export default function StopCard({stop, onEdit, onDelete}) {
         <div className="stop-card my-3">
             {
                 editing ?
-                <>
+                <form onSubmit={e => {
+                    e.preventDefault();
+                    const updatedAddress = {
+                        ...newAddress,
+                        fullAddress: `${newAddress.postalCode} ${newAddress.city}, ${newAddress.address} ${newAddress.addressOther}`
+                    }
+                    setNewAddress(updatedAddress)
+                    onEdit(stop.id, updatedAddress);
+                    setEditing(false);
+                }}>
                     <input defaultValue={stop.location.postalCode} placeholder="Postal code" onChange={e => setNewAddress(prev => ({...prev, postalCode: e.target.value}))}/>
-                    <input defaultValue={stop.location.city} placeholder="City" onChange={e => setNewAddress(prev => ({...prev, city: e.target.value}))}/>
+                    <input required defaultValue={stop.location.city} placeholder="City" onChange={e => setNewAddress(prev => ({...prev, city: e.target.value}))}/>
                     <input defaultValue={stop.location.address} placeholder="Address" onChange={e => setNewAddress(prev => ({...prev, address: e.target.value}))}/>
                     <input defaultValue={stop.location.addressOther} placeholder="Other" onChange={e => setNewAddress(prev => ({...prev, addressOther: e.target.value}))}/>
-                    <button onClick={() => {
-                        const updatedAddress = {
-                            ...newAddress,
-                            fullAddress: `${newAddress.postalCode} ${newAddress.city}, ${newAddress.address} ${newAddress.addressOther}`
-                        }
-                        setNewAddress(updatedAddress)
-                        onEdit(stop.id, updatedAddress);
-                        setEditing(false);
-                    }}>Save</button>
-                </>
+                    <button type="submit">Save</button>
+                </form>
                 :
                 <a href={`https://maps.google.com/maps?q=${stop.location.fullAddress}`} target="_blank" rel="noopener noreferrer">{stop.location.fullAddress}</a>
             }

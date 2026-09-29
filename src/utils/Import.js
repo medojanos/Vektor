@@ -27,19 +27,17 @@ export default function importExcel(file, overrideStops) {
 
         const validRows = rows
           .slice(2)
-          .filter(row => row.some(value => value !== ""))
           .filter(row => row[11] !== "0")
           .filter(row => !seenIds.has(row[0]))
 
         const stops = [];
 
         for (const row of validRows) {
-          const fullAddress = `${row[19]} ${row[20]}, ${row[21]} ${row[22]}`;
-          const coordinates = await getCoordinates(fullAddress);
+          const coordinates = await getCoordinates(`${row[19]} ${row[20]}, ${row[21]}`);
           stops.push(
             new Stop(
               {
-                id: row[0],
+                id: row[1],
                 name: row[3],
                 email: row[4],
                 phone: row[5],
@@ -51,7 +49,7 @@ export default function importExcel(file, overrideStops) {
                 city: row[20],
                 address: row[21],
                 addressOther: row[22],
-                fullAddress: fullAddress,
+                fullAddress: `${row[19]} ${row[20]}, ${row[21]} ${row[22]}`,
 
                 coordinates: coordinates,
 
