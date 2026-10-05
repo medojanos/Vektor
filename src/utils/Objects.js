@@ -36,7 +36,6 @@ class Stop {
   location;
 
   routeInfo = {
-    arrival: 0,
     distanceFromPrevious: 0,
     durationFromPrevious: 0
   };
@@ -65,6 +64,8 @@ class Route {
   constructor({stops} = {}) {
     this.stops = stops || [];
     this.createdAt = Date.now();
+    this.totalDistance = 0;
+    this.totalDuration = 0;
   }
 }
 

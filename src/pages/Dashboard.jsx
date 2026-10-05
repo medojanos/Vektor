@@ -35,7 +35,7 @@ export default function Dashboard() {
         <div className="d-flex align-items-center flex-column mt-5">
           <h2>My routes</h2>
           <p>Create a new route or import one.</p>
-          <div className='text-center'>
+          <div className='text-center mt-2'>
             <button 
             onClick={() => {
               const newRoute = new Route();

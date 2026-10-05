@@ -21,14 +21,19 @@ export default function importExcel(file, overrideStops) {
           defval: ""
         });
 
-        const seenIds = new Set(
+        const seenOrders = new Set(
           overrideStops?.map(stop => stop.id ?? [])
         );
 
         const validRows = rows
           .slice(2)
+          .filter(row => row.some(cell => cell !== ""))
           .filter(row => row[11] !== "0")
-          .filter(row => !seenIds.has(row[0]))
+          .filter(row => !seenOrders.has(row[1]))
+          .map(row => {
+            row[20] = row[20].replace("ker.", "kerület");
+            return row;
+          })
 
         const stops = [];
 

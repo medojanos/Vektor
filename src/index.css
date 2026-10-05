@@ -15,7 +15,7 @@ body {
 }
 
 header {
-    background-color: #0D1C42;
+    background-color: #091540;
     padding: 10px;
 }
 
@@ -83,8 +83,27 @@ input:active, input:focus {
     color: #00BFFF;
 }
 .stop-card button {
-    padding-top: 3px;
-    padding-bottom: 3px;
-    padding-left: 8px;
-    padding-right: 8px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+.chevron {
+    font-size: 2rem;
+}
+
+.box {
+    background-color: #0D1C42;
+    border: 1px solid #03346E;
+    border-radius: 8px;
+    padding: 10px;
+}
+
+p {
+    margin: 0;
+}
+
+table {
+    width: 100%;
 }
