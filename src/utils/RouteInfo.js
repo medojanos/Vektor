@@ -34,7 +34,8 @@ export default async function routeInfo(stops) {
         };
 
     } catch (error) {
-        alert("Error getting route information: " + error.message);
+        alert("Error getting route information");
+        console.log(error.message)
         return null;
     }
 }

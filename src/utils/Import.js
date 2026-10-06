@@ -22,7 +22,7 @@ export default function importExcel(file, overrideStops) {
         });
 
         const seenOrders = new Set(
-          overrideStops?.map(stop => stop.id ?? [])
+          overrideStops?.map(stop => stop.id) ?? []
         );
 
         const validRows = rows
@@ -57,6 +57,8 @@ export default function importExcel(file, overrideStops) {
                 fullAddress: `${row[19]} ${row[20]}, ${row[21]} ${row[22]}`,
 
                 coordinates: coordinates,
+
+                active: Boolean(coordinates),
 
                 note: row[27],
                 parcel: row[30],

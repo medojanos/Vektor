@@ -39,8 +39,7 @@ export default function Dashboard() {
           <div className='text-center mt-2'>
             <button 
             onClick={() => {
-              const newRoute = new Route();
-              startRoute(newRoute);
+              startRoute(new Route());
             }}>
               Start planning
             </button>
@@ -50,8 +49,13 @@ export default function Dashboard() {
                 setLoading(true);
                 try {
                   const stops = await importExcel(file);
-                  const route = await routeInfo(stops)
-                  startRoute(new Route({stops: route.stops, totalDistance: route.distance, totalDuration: route.duration, geometry: route.geometry}));
+                  const route = await routeInfo(stops.filter(stop => stop.active));
+                  startRoute(new Route({
+                    stops: route.stops,
+                    totalDistance: route.distance, 
+                    totalDuration: route.duration, 
+                    geometry: route.geometry
+                  }));
                 } catch (error) {
                   alert("Error importing Excel file: " + error.message);
                 } finally {
@@ -64,8 +68,8 @@ export default function Dashboard() {
             {
               routes.length != 0
               ?
-              routes.map((route, index) => (
-                <RouteCard key={index} route={route} 
+              routes.map(route => (
+                <RouteCard key={route.createdAt} route={route} 
                   onDelete={createdAt => {
                     setRoute(routes.filter(r => r.createdAt !== createdAt));
                   }}

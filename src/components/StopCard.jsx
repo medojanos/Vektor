@@ -1,18 +1,19 @@
 import { useState } from "react"
 import DisplayTime from "../utils/DisplayTime";
 
-export default function StopCard({stop, onEdit, onDelete, onMoveUp, onMoveDown, onMakeFirst, onMakeLast}) {
+export default function StopCard({stop, onEdit, onDelete, onMoveUp, onMoveDown, onMakeFirst, onMakeLast, onToggle}) {
     const [editing, setEditing] = useState(false);
-    const [newAddress, setNewAddress] = useState(stop.location);
+    const [newStop, setNewStop] = useState(stop);
 
     function handleSubmit(e) {
         e.preventDefault();
-        const updatedAddress = {
-            ...newAddress,
-            fullAddress: `${newAddress.postalCode} ${newAddress.city}, ${newAddress.address} ${newAddress.addressOther}`
-        }
-        setNewAddress(updatedAddress)
-        onEdit(stop.id, updatedAddress);
+        onEdit(stop.id, {
+            ...newStop, 
+            location: {
+                ...newStop.location, 
+                fullAddress: `${newStop.location.postalCode} ${newStop.location.city}, ${newStop.location.address} ${newStop.location.addressOther}`
+            }
+        });
         setEditing(false);
     }
 
@@ -21,10 +22,55 @@ export default function StopCard({stop, onEdit, onDelete, onMoveUp, onMoveDown, 
             {
                 editing ?
                 <form onSubmit={handleSubmit}>
-                    <input defaultValue={stop.location.postalCode} placeholder="Postal code" onChange={e => setNewAddress(prev => ({...prev, postalCode: e.target.value}))}/>
-                    <input required defaultValue={stop.location.city} placeholder="City" onChange={e => setNewAddress(prev => ({...prev, city: e.target.value}))}/>
-                    <input defaultValue={stop.location.address} placeholder="Address" onChange={e => setNewAddress(prev => ({...prev, address: e.target.value}))}/>
-                    <input defaultValue={stop.location.addressOther} placeholder="Other" onChange={e => setNewAddress(prev => ({...prev, addressOther: e.target.value}))}/>
+                    <input
+                        defaultValue={stop.location.postalCode}
+                        placeholder="Postal code"
+                        onChange={e =>
+                            setNewStop(prev => ({
+                                ...prev,
+                                location: {
+                                    ...prev.location,
+                                    postalCode: e.target.value
+                                }
+                            }))
+                        }/>
+                    <input
+                        required
+                        defaultValue={stop.location.city}
+                        placeholder="City"
+                        onChange={e =>
+                            setNewStop(prev => ({
+                                ...prev,
+                                location: {
+                                    ...prev.location,
+                                    city: e.target.value
+                                }
+                            }))
+                        }/>
+                    <input
+                        defaultValue={stop.location.address}
+                        placeholder="Address"
+                        onChange={e =>
+                            setNewStop(prev => ({
+                                ...prev,
+                                location: {
+                                    ...prev.location,
+                                    address: e.target.value
+                                }
+                            }))
+                        }/>
+                    <input
+                        defaultValue={stop.location.addressOther}
+                        placeholder="Other"
+                        onChange={e =>
+                            setNewStop(prev => ({
+                                ...prev,
+                                location: {
+                                    ...prev.location,
+                                    addressOther: e.target.value
+                                }
+                            }))
+                        }/>
                     <button type="submit">Save</button>
                 </form>
                 :
@@ -32,7 +78,8 @@ export default function StopCard({stop, onEdit, onDelete, onMoveUp, onMoveDown, 
                     <div className="d-flex justify-content-between">
                         <div>
                             <b>{stop.location.fullAddress}</b>
-                            {stop.location.coordinates ? null : <b className="ms-3 text-warning">Missing coordinates <ion-icon name="warning"></ion-icon></b>}
+                            {!stop.active && <b className="text-secondary">Inactive</b>}
+                            {!stop.location.coordinates && <b className="ms-1 text-warning">Missing coordinates</b>}
                         </div>
                         
                         <div className="d-flex">
@@ -43,6 +90,12 @@ export default function StopCard({stop, onEdit, onDelete, onMoveUp, onMoveDown, 
                                 <div className="dropdown-menu box" aria-labelledby={`menu-${stop.id}`}>
                                     <a type="button" onClick={() => onMakeFirst(stop.id)} className="dropdown-item">Make this first</a>
                                     <a type="button" onClick={() => onMakeLast(stop.id)} className="dropdown-item">Make this last</a>
+                                    {
+                                        stop.active ?
+                                        <a type="button" onClick={() => onToggle(stop.id)} className="dropdown-item">Deactivate</a>
+                                        :
+                                        <a type="button" onClick={() => onToggle(stop.id)} className="dropdown-item">Activate</a>
+                                    }
                                 </div>
                             </div>
                             <a type="button" data-bs-toggle="collapse" href={`#details-${stop.id}`} role="button" aria-expanded="false" aria-controls={`details-${stop.id}`}>
@@ -66,13 +119,22 @@ export default function StopCard({stop, onEdit, onDelete, onMoveUp, onMoveDown, 
                 </>
             }
             {
-                stop.parcel ? 
+                stop.parcel &&
                 <>
                     <hr/>
-                    <p className="box">{stop.parcel}</p> 
+                    {
+                        editing ?
+                        <textarea 
+                            className="box" 
+                            style={{color: "white", width: "100%"}} 
+                            defaultValue={stop.parcel}
+                            onChange={e => setNewStop(prev => ({...prev, parcel: e.target.value}))}
+                        />
+                        :
+                        <p className="box">{stop.parcel}</p> 
+                    }
                 </>
-                : 
-                null}
+            }
             {
                 stop.note ?
                 <>

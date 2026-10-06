@@ -8,7 +8,7 @@ class Location {
 
   coordinates = {
     lat: null,
-    lng: null
+    lon: null
   };
 
   constructor({postalCode, city, address, addressOther, coordinates} = {}) {
@@ -35,12 +35,14 @@ class Stop {
 
   location;
 
+  active;
+
   routeInfo = {
     distanceFromPrevious: 0,
     durationFromPrevious: 0
   };
 
-  constructor({id, name, email, phone, price, deliveryPrice, parcel, note, postalCode, city, address, addressOther, coordinates} = {}) {
+  constructor({id, name, email, phone, price, deliveryPrice, parcel, note, postalCode, city, address, addressOther, coordinates, active} = {}) {
     this.id = id || Date.now();
     this.name = name || "";
     this.email = email || "";
@@ -50,6 +52,7 @@ class Stop {
     this.parcel = parcel || "";
     this.note = note || "";
     this.location = new Location({postalCode, city, address, addressOther, coordinates});
+    this.active = active || false;
   }
 }
 

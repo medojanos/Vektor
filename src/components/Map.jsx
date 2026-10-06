@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
-export default function Map({coordinates}) {
+export default function Map({coordinates, stops}) {
   const mapContainer = useRef(null);
 
   useEffect(() => {
@@ -20,13 +20,15 @@ export default function Map({coordinates}) {
       opacity: 0.9,
     }).addTo(map);
 
-    /*
-    coordinates.forEach(([lng, lat], index) => {
-      L.marker([lat, lng])
+    
+    stops.forEach(stop => {
+      const { lat, lon } = stop.location.coordinates;
+
+      L.marker([lat, lon])
         .addTo(map)
-        .bindPopup(`Stop ${index + 1}`);
+        .bindPopup(stop.location.city);
     });
-    */
+    
 
     map.fitBounds(route.getBounds(), {
       padding: [30, 30],
@@ -35,7 +37,7 @@ export default function Map({coordinates}) {
     return () => {
       map.remove();
     };
-  }, [coordinates]);
+  }, [coordinates, stops]);
 
   return (
     <div

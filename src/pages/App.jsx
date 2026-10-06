@@ -1,4 +1,4 @@
-import {useState, useEffect} from "react"
+import {useState, useEffect, act} from "react"
 import { Route, Stop } from "../utils/Objects"
 import StopCard from "../components/StopCard"
 import {Link} from "react-router-dom"
@@ -14,6 +14,29 @@ export default function App() {
     const [newStop, setNewStop] = useState({});
     const [override, setOverride] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [showScrollDown, setShowScrollDown] = useState(false);
+
+     useEffect(() => {
+        const checkScroll = () => {
+            const scrollHeight = document.documentElement.scrollHeight;
+            const viewportHeight = window.innerHeight;
+            const scrollPosition = window.scrollY;
+
+            const hasScroll = scrollHeight > viewportHeight;
+            const atBottom =
+                viewportHeight + scrollPosition >= scrollHeight - 10;
+
+            setShowScrollDown(hasScroll && !atBottom);
+        };
+
+        checkScroll();
+
+        window.addEventListener("scroll", checkScroll);
+
+        return () => {
+            window.removeEventListener("scroll", checkScroll);
+        };
+    }, []);
 
     useEffect(() => {
         let routes = JSON.parse(localStorage.getItem("routes"));
@@ -25,13 +48,33 @@ export default function App() {
     }, [route])
 
     
-    function updateRoute(newRoute) {
+    async function updateRoute(newRoute) {
+        const routeData = await routeInfo(newRoute.stops.filter(stop => stop.active));
+
+        const updatedStops = newRoute.stops.map(originalStop => {
+            if (!originalStop.active) {
+                return {
+                    ...originalStop,
+                    routeInfo: {
+                        distanceFromPrevious: 0,
+                        durationFromPrevious: 0
+                    }
+                };
+            }
+
+            const updatedStop = routeData.stops.find(
+                stop => stop.id === originalStop.id
+            );
+
+            return updatedStop ?? originalStop;
+        });
+
         setRoute(prev => ({
             ...prev,
-            geometry: newRoute.geometry,
-            stops: newRoute.stops,
-            totalDistance: newRoute.distance,
-            totalDuration: newRoute.duration
+            stops: updatedStops,
+            geometry: routeData.geometry,
+            totalDistance: routeData.distance,
+            totalDuration: routeData.duration
         }));
     }
 
@@ -42,44 +85,38 @@ export default function App() {
             try {
                 if (override) {
                     const stops = await importExcel(file);
-                    setRoute(new Route({...route, stops: stops}));
-                    updateRoute(await routeInfo(stops));
+                    await updateRoute({...route, stops: stops});
                 };
                 if (!override) {
                     const stops = await importExcel(file, route.stops);
-                    const newRoute = {...route, stops: [...route.stops, ...stops]}
-                    setRoute(newRoute);
-                    updateRoute(await routeInfo(newRoute.stops));
+                    await updateRoute({...route, stops: [...route.stops, ...stops]});
                 };
             } catch (error) {
-                alert("Error importing Excel file:", error);
+                alert("Error importing Excel file");
+                console.log(error.message)
             } finally {
                 setLoading(false);
             }
         }
     }
-    async function updateStopCoordinates(id, newAddress) {
-        const newCoordinates = await getCoordinates(`${newAddress.postalCode} ${newAddress.city}, ${newAddress.address}`);
-        setRoute(prev => ({
-            ...prev, 
-            stops: prev.stops.map(stop => {
-                if (stop.id == id) {
-                    return {...stop, location: 
-                        {
-                            postalCode: newAddress.postalCode || "",
-                            city: newAddress.city || "",
-                            address: newAddress.address || "",
-                            addressOther: newAddress.addressOther || "",
-                            fullAddress: newAddress.fullAddress,
+    async function updateStop(id, newStop) {
+        const newCoordinates = await getCoordinates(`${newStop.location.postalCode} ${newStop.location.city}, ${newStop.location.address}`);
 
-                            coordinates: newCoordinates
-                        } 
-                    }
-                }
+        const newStops = route.stops.map(stop => {
+            if (stop.id !== id) {
                 return stop;
-            })
-        }));
-        updateRoute(await routeInfo(route.stops));
+            }
+            return {
+                ...newStop,
+                location: {
+                    ...newStop.location,
+                    coordinates: newCoordinates
+                },
+                active: Boolean(newCoordinates)
+            };
+        });
+        
+        await updateRoute({...route, stops: newStops});
     }
     async function moveStop(id, direction) {
         const index = route.stops.findIndex(s => s.id === id);
@@ -90,9 +127,7 @@ export default function App() {
             [newStops[index], newStops[index - 1]] =
                 [newStops[index - 1], newStops[index]];
 
-            const newRoute = await routeInfo(newStops);
-
-            updateRoute(newRoute);
+            await updateRoute({...route, stops: newStops});
         }
 
         if (direction === "down" && index < route.stops.length - 1) {
@@ -101,9 +136,7 @@ export default function App() {
             [newStops[index], newStops[index + 1]] =
                 [newStops[index + 1], newStops[index]];
 
-            const newRoute = await routeInfo(newStops);
-
-            updateRoute(newRoute);
+            await updateRoute({...route, stops: newStops});
         }
     }
 
@@ -139,6 +172,8 @@ export default function App() {
                                     <th>Total distance</th>
                                     <th>Total duration</th>
                                     <th>Total stops</th>
+                                    <th>Inactive stops</th>
+                                    <th>Bad addresses</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -146,13 +181,25 @@ export default function App() {
                                     <td>{Math.round(route.totalDistance / 1000)} km</td>
                                     <td>{displayTime(route.totalDuration)}</td>
                                     <td>{route.stops.length}</td>
+                                    <td>{route.stops.filter(stop => !stop.active).length}</td>
+                                    <td>{route.stops.filter(stop => !stop.location.coordinates).length}</td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
                     <button onClick={async () => {
-                        const optimizedRoute = await optimizeRoute(route.stops);
-                        if (optimizedRoute) updateRoute(optimizedRoute);
+                        const inactiveStops = route.stops.filter(stop => !stop.active);
+                        const optimizedRoute = await optimizeRoute(route.stops.filter(stop => stop.active));
+                        if (optimizedRoute) await updateRoute({
+                            ...route,
+                            stops: [
+                                ...optimizedRoute.stops,
+                                ...inactiveStops
+                            ],
+                            totalDistance: optimizedRoute.distance,
+                            totalDuration: optimizedRoute.duration,
+                            geometry: optimizedRoute.geometry
+                        });
                     }} className="d-flex align-items-center my-4 ms-auto">
                         <span className="me-2">Optimize</span><ion-icon name="star"></ion-icon>
                     </button>
@@ -168,10 +215,21 @@ export default function App() {
                                 <form id="stop-form" className="collapse mt-2" onSubmit={async e => {
                                         e.preventDefault();
                                         const stop = new Stop(newStop);
-                                        const stopWithCoordinates = {...stop, location: {...stop.location, coordinates: await getCoordinates(stop.location.fullAddress)}};
-                                        const newRoute = {...route, stops: [...route.stops, stopWithCoordinates]};
-                                        setRoute(newRoute);
-                                        updateRoute(await routeInfo(newRoute.stops));
+                                        const newCoordinates = await getCoordinates(stop.location.fullAddress);
+                                        await updateRoute({
+                                            ...route, 
+                                            stops: [
+                                                ...route.stops, 
+                                                {
+                                                    ...stop,
+                                                    location: {
+                                                        ...stop.location, 
+                                                        coordinates: newCoordinates
+                                                    },
+                                                    active: Boolean(newCoordinates)
+                                                }
+                                            ]
+                                        });
                                     }}>
                                     <span>Contact</span><br/>
                                     <input placeholder="Name" onChange={e => setNewStop(prev => ({...prev, name: e.target.value}))}></input>
@@ -193,15 +251,14 @@ export default function App() {
                                     <button type="reset" className="button-warning" onClick={() => setNewStop({})}>Clear</button>
                                 </form>
                                 {
-                                    route.stops.map((stop, index) => (
+                                    route.stops.map(stop => (
                                         <StopCard 
-                                            key={index} 
+                                            key={stop.id} 
                                             stop={stop} 
-                                            onEdit={updateStopCoordinates}
+                                            onEdit={updateStop}
                                             onDelete={async id => {
                                                 const newStops = route.stops.filter(s => s.id !== id)
-                                                setRoute(prev => ({...prev, stops: newStops}));
-                                                updateRoute(await routeInfo(newStops))
+                                                await updateRoute({...route, stops: newStops});
                                             }}
                                             onMoveUp={id => moveStop(id, "up")}
                                             onMoveDown={id => moveStop(id, "down")}
@@ -211,29 +268,43 @@ export default function App() {
                                                 const newStops = [...route.stops];
                                                 const [stop] = newStops.splice(index, 1);
                                                 newStops.unshift(stop);
-                                                updateRoute(await routeInfo(newStops));
+                                                await updateRoute({...route, stops: newStops});
                                             }}
-
                                             onMakeLast={async id => {
                                                 const index = route.stops.findIndex(stop => stop.id === id);
                                                 if (index === -1 || index === route.stops.length - 1) return;
                                                 const newStops = [...route.stops];
                                                 const [stop] = newStops.splice(index, 1);
                                                 newStops.push(stop);
-                                                updateRoute(await routeInfo(newStops));
+                                                await updateRoute({...route, stops: newStops});
+                                            }}
+                                            onToggle={async id => {
+                                                const newStops = route.stops.map(stop =>
+                                                    stop.id === id
+                                                        ? { ...stop, active: !stop.active }
+                                                        : stop
+                                                );
+                                                await updateRoute({...route, stops: newStops});
                                             }}
                                         />
                                     ))
                                 }
                             </div>
                             <div className="col-12 col-xl-7">
-                                <Map coordinates={route.geometry}/>
+                                <Map coordinates={route.geometry} stops={route.stops.filter(stop => stop.active)}/>
                             </div>
                         </div>
                     </div>
-                    <button id="scrolldown" onClick={() => window.scrollBy({ top: document.documentElement.scrollHeight, behavior: "smooth" })}>
-                        <ion-icon name="arrow-down-outline"></ion-icon>
-                    </button>
+                    {showScrollDown ?
+                        <button className="scroll" onClick={() => window.scrollTo({top: document.documentElement.scrollHeight, behavior: "smooth"})}>
+                            <ion-icon name="arrow-down-outline"></ion-icon>
+                        </button>
+                        :
+                        <button className="scroll" onClick={() => window.scrollTo({top: 0, behavior: "smooth"})}>
+                            <ion-icon name="arrow-up-outline"></ion-icon>
+                        </button>
+                    }
+                    
                 </div>
             }
         </>

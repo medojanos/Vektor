@@ -5,7 +5,7 @@ body, html {
 
 #root {
     display: flex;
-    height: 100vh;
+    min-height: 100vh;
     flex-direction: column;
 }
 
@@ -108,7 +108,7 @@ table {
     width: 100%;
 }
 
-#scrolldown {
+.scroll {
     z-index: 1;
     position: fixed;
     bottom: 1rem;
