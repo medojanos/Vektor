@@ -1,6 +1,7 @@
 import { useState } from "react"
+import DisplayTime from "../utils/DisplayTime";
 
-export default function StopCard({stop, onEdit, onDelete, onMoveUp, onMoveDown}) {
+export default function StopCard({stop, onEdit, onDelete, onMoveUp, onMoveDown, onMakeFirst, onMakeLast}) {
     const [editing, setEditing] = useState(false);
     const [newAddress, setNewAddress] = useState(stop.location);
 
@@ -33,21 +34,45 @@ export default function StopCard({stop, onEdit, onDelete, onMoveUp, onMoveDown})
                             <b>{stop.location.fullAddress}</b>
                             {stop.location.coordinates ? null : <b className="ms-3 text-warning">Missing coordinates <ion-icon name="warning"></ion-icon></b>}
                         </div>
-                        <a type="button" data-bs-toggle="collapse" href="#details" role="button" aria-expanded="false" aria-controls="details">
-                            <ion-icon style={{fontSize: 25}} name="information-circle-outline"></ion-icon>
-                        </a>
+                        
+                        <div className="d-flex">
+                            <div className="me-3">
+                                <a type="button" id={`menu-${stop.id}`} style={{color: "inherit"}} data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <ion-icon name="ellipsis-horizontal"></ion-icon>
+                                </a>
+                                <div className="dropdown-menu box" aria-labelledby={`menu-${stop.id}`}>
+                                    <a type="button" onClick={() => onMakeFirst(stop.id)} className="dropdown-item">Make this first</a>
+                                    <a type="button" onClick={() => onMakeLast(stop.id)} className="dropdown-item">Make this last</a>
+                                </div>
+                            </div>
+                            <a type="button" data-bs-toggle="collapse" href={`#details-${stop.id}`} role="button" aria-expanded="false" aria-controls={`details-${stop.id}`}>
+                                <ion-icon style={{fontSize: 25}} name="information-circle-outline"></ion-icon>
+                            </a>
+                        </div>
+                        
                     </div>
-                    <div id="details" className="collapse">
+                    <div className="d-flex justify-content-between">
+                        <p>{stop.name}</p>
+                        <span>{Math.round(stop.routeInfo.distanceFromPrevious)} km - {DisplayTime(stop.routeInfo.durationFromPrevious)}</span>
+                    </div>
+                    <div id={`details-${stop.id}`} className="collapse">
                         <hr/>
-                        <p>Order number: {stop.id}</p>
-                        <p>Email: {stop.email}</p>
+                        <p>Order Number: {stop.id}</p>
+                        <p>Email: <a href={`mailto:${stop.email}`}>{stop.email}</a></p>
                         <p>Phone: {stop.phone}</p>
+                        <p>Price: {stop.price} Ft</p>
+                        <p>Delivery Price: {stop.deliveryPrice} Ft</p>
                     </div>
                 </>
             }
-            <p>{stop.name}</p>
-            <hr/>
-            {stop.parcel ? <p className="box">{stop.parcel}</p> : null}
+            {
+                stop.parcel ? 
+                <>
+                    <hr/>
+                    <p className="box">{stop.parcel}</p> 
+                </>
+                : 
+                null}
             {
                 stop.note ?
                 <>

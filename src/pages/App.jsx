@@ -5,6 +5,9 @@ import {Link} from "react-router-dom"
 import importExcel from "../utils/Import.js"
 import getCoordinates from "../utils/Coordinates.js"
 import displayTime from "../utils/DisplayTime.js"
+import optimizeRoute from "../utils/Optimize.js"
+import routeInfo from "../utils/RouteInfo.js"
+import Map from "../components/Map.jsx"
 
 export default function App() {
     const [route, setRoute] = useState(JSON.parse(localStorage.getItem("selected")) || new Route());
@@ -21,6 +24,17 @@ export default function App() {
         localStorage.setItem("selected", JSON.stringify(route));
     }, [route])
 
+    
+    function updateRoute(newRoute) {
+        setRoute(prev => ({
+            ...prev,
+            geometry: newRoute.geometry,
+            stops: newRoute.stops,
+            totalDistance: newRoute.distance,
+            totalDuration: newRoute.duration
+        }));
+    }
+
     async function handleImport(e) {
         const file = e.target.files[0];
         if (file) {
@@ -28,22 +42,24 @@ export default function App() {
             try {
                 if (override) {
                     const stops = await importExcel(file);
-                    setRoute(new Route({stops: stops}));
+                    setRoute(new Route({...route, stops: stops}));
+                    updateRoute(await routeInfo(stops));
                 };
                 if (!override) {
                     const stops = await importExcel(file, route.stops);
-                    setRoute({...route, stops: [...route.stops, ...stops]});
+                    const newRoute = {...route, stops: [...route.stops, ...stops]}
+                    setRoute(newRoute);
+                    updateRoute(await routeInfo(newRoute.stops));
                 };
             } catch (error) {
                 alert("Error importing Excel file:", error);
             } finally {
-                setLoading(false)
+                setLoading(false);
             }
-            
         }
     }
     async function updateStopCoordinates(id, newAddress) {
-        const newCoordinates = await getCoordinates(newAddress.postalCode, newAddress.city, newAddress.address);
+        const newCoordinates = await getCoordinates(`${newAddress.postalCode} ${newAddress.city}, ${newAddress.address}`);
         setRoute(prev => ({
             ...prev, 
             stops: prev.stops.map(stop => {
@@ -62,29 +78,33 @@ export default function App() {
                 }
                 return stop;
             })
-        }))
+        }));
+        updateRoute(await routeInfo(route.stops));
     }
-    function moveStopUp(id) {
-        setRoute(prev => {
-            const index = prev.stops.findIndex(s => s.id === id);
-            if (index > 0) {
-                const newStops = [...prev.stops];
-                [newStops[index], newStops[index - 1]] = [newStops[index - 1], newStops[index]];
-                return {...prev, stops: newStops};
-            }
-            return prev;
-        });
-    }
-    function moveStopDown(id) {
-        setRoute(prev => {
-            const index = prev.stops.findIndex(s => s.id === id);
-            if (index < prev.stops.length - 1) {
-                const newStops = [...prev.stops];
-                [newStops[index], newStops[index + 1]] = [newStops[index + 1], newStops[index]];
-                return {...prev, stops: newStops};
-            }
-            return prev;
-        });
+    async function moveStop(id, direction) {
+        const index = route.stops.findIndex(s => s.id === id);
+
+        if (direction === "up" && index > 0) {
+            const newStops = [...route.stops];
+
+            [newStops[index], newStops[index - 1]] =
+                [newStops[index - 1], newStops[index]];
+
+            const newRoute = await routeInfo(newStops);
+
+            updateRoute(newRoute);
+        }
+
+        if (direction === "down" && index < route.stops.length - 1) {
+            const newStops = [...route.stops];
+
+            [newStops[index], newStops[index + 1]] =
+                [newStops[index + 1], newStops[index]];
+
+            const newRoute = await routeInfo(newStops);
+
+            updateRoute(newRoute);
+        }
     }
 
     return (
@@ -118,73 +138,102 @@ export default function App() {
                                 <tr>
                                     <th>Total distance</th>
                                     <th>Total duration</th>
+                                    <th>Total stops</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr>
-                                    <td>{route.totalDistance} km</td>
+                                    <td>{Math.round(route.totalDistance / 1000)} km</td>
                                     <td>{displayTime(route.totalDuration)}</td>
+                                    <td>{route.stops.length}</td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
-                    <button className="d-flex align-items-center my-4 ms-auto">
+                    <button onClick={async () => {
+                        const optimizedRoute = await optimizeRoute(route.stops);
+                        if (optimizedRoute) updateRoute(optimizedRoute);
+                    }} className="d-flex align-items-center my-4 ms-auto">
                         <span className="me-2">Optimize</span><ion-icon name="star"></ion-icon>
                     </button>
-                    <div className="d-flex align-items-center">
-                        <span>Add stop manually</span>
-                        <a id="add-stop" type="button" data-bs-toggle="collapse" data-bs-target="#stop-form" aria-expanded="false" aria-controls="stop-form" className="collapsed">
-                            <ion-icon style={{fontSize: 22}} name="arrow-down"></ion-icon>
-                        </a>
-                    </div>
-                    <form id="stop-form" className="collapse mt-2" onSubmit={e => {
-                            e.preventDefault();
-                            const stop = new Stop(newStop);
-                            setRoute({...route, stops: [...route.stops, stop]});
-                        }}>
-                        <span>Contact</span><br/>
-                        <input placeholder="Name" onChange={e => setNewStop(prev => ({...prev, name: e.target.value}))}></input>
-                        <input type="email" placeholder="Email" onChange={e => setNewStop(prev => ({...prev, email: e.target.value}))}></input>
-                        <input type="tel" placeholder="Phone" onChange={e => setNewStop(prev => ({...prev, phone: e.target.value}))}></input>
-                        <br/><span>Price</span><br/>
-                        <input type="number" placeholder="Price" onChange={e => setNewStop(prev => ({...prev, price: e.target.value}))}></input>
-                        <input type="number" placeholder="Delivery price" onChange={e => setNewStop(prev => ({...prev, deliveryPrice: e.target.value}))}></input>
-                        <br/><span>Package</span><br/>
-                        <input placeholder="Parcel" onChange={e => setNewStop(prev => ({...prev, parcel: e.target.value}))}></input>
-                        <input placeholder="Note" onChange={e => setNewStop(prev => ({...prev, note: e.target.value}))}></input>
-                        <br/><span>Address</span><br/>
-                        <input type="number" placeholder="Zip code" onChange={e => setNewStop(prev => ({...prev, zipCode: e.target.value}))}></input>
-                        <input required placeholder="City" onChange={e => setNewStop(prev => ({...prev, city: e.target.value}))}></input>
-                        <input placeholder="Address" onChange={e => setNewStop(prev => ({...prev, address: e.target.value}))}></input>
-                        <input placeholder="Other address" onChange={e => setNewStop(prev => ({...prev, addressOther: e.target.value}))}></input>
-                        <br/>
-                        <button type="submit" className="mt-2">Add stop</button>
-                        <button type="reset" className="button-warning" onClick={() => setNewStop({})}>Clear</button>
-                    </form>
                     <div className="container-fluid">
                         <div className="row">
                             <div className="col-12 col-xl-5">
-                                
+                                <div className="d-flex align-items-center">
+                                    <span>Add stop manually</span>
+                                    <a id="add-stop" type="button" data-bs-toggle="collapse" data-bs-target="#stop-form" aria-expanded="false" aria-controls="stop-form" className="collapsed">
+                                        <ion-icon style={{fontSize: 22}} name="arrow-down"></ion-icon>
+                                    </a>
+                                </div>
+                                <form id="stop-form" className="collapse mt-2" onSubmit={async e => {
+                                        e.preventDefault();
+                                        const stop = new Stop(newStop);
+                                        const stopWithCoordinates = {...stop, location: {...stop.location, coordinates: await getCoordinates(stop.location.fullAddress)}};
+                                        const newRoute = {...route, stops: [...route.stops, stopWithCoordinates]};
+                                        setRoute(newRoute);
+                                        updateRoute(await routeInfo(newRoute.stops));
+                                    }}>
+                                    <span>Contact</span><br/>
+                                    <input placeholder="Name" onChange={e => setNewStop(prev => ({...prev, name: e.target.value}))}></input>
+                                    <input type="email" placeholder="Email" onChange={e => setNewStop(prev => ({...prev, email: e.target.value}))}></input>
+                                    <input type="tel" placeholder="Phone" onChange={e => setNewStop(prev => ({...prev, phone: e.target.value}))}></input>
+                                    <br/><span>Price</span><br/>
+                                    <input type="number" placeholder="Price" onChange={e => setNewStop(prev => ({...prev, price: e.target.value}))}></input>
+                                    <input type="number" placeholder="Delivery price" onChange={e => setNewStop(prev => ({...prev, deliveryPrice: e.target.value}))}></input>
+                                    <br/><span>Package</span><br/>
+                                    <input placeholder="Parcel" onChange={e => setNewStop(prev => ({...prev, parcel: e.target.value}))}></input>
+                                    <input placeholder="Note" onChange={e => setNewStop(prev => ({...prev, note: e.target.value}))}></input>
+                                    <br/><span>Address</span><br/>
+                                    <input type="number" placeholder="Zip code" onChange={e => setNewStop(prev => ({...prev, postalCode: e.target.value}))}></input>
+                                    <input required placeholder="City" onChange={e => setNewStop(prev => ({...prev, city: e.target.value}))}></input>
+                                    <input placeholder="Address" onChange={e => setNewStop(prev => ({...prev, address: e.target.value}))}></input>
+                                    <input placeholder="Other address" onChange={e => setNewStop(prev => ({...prev, addressOther: e.target.value}))}></input>
+                                    <br/>
+                                    <button type="submit" className="mt-2">Add stop</button>
+                                    <button type="reset" className="button-warning" onClick={() => setNewStop({})}>Clear</button>
+                                </form>
                                 {
                                     route.stops.map((stop, index) => (
                                         <StopCard 
                                             key={index} 
                                             stop={stop} 
                                             onEdit={updateStopCoordinates}
-                                            onDelete={id => {
-                                                setRoute(prev => ({...prev, stops: prev.stops.filter(s => s.id !== id)}));
+                                            onDelete={async id => {
+                                                const newStops = route.stops.filter(s => s.id !== id)
+                                                setRoute(prev => ({...prev, stops: newStops}));
+                                                updateRoute(await routeInfo(newStops))
                                             }}
-                                            onMoveUp={moveStopUp}
-                                            onMoveDown={moveStopDown}
+                                            onMoveUp={id => moveStop(id, "up")}
+                                            onMoveDown={id => moveStop(id, "down")}
+                                            onMakeFirst={async id => {
+                                                const index = route.stops.findIndex(stop => stop.id === id);
+                                                if (index === -1 || index === 0) return;
+                                                const newStops = [...route.stops];
+                                                const [stop] = newStops.splice(index, 1);
+                                                newStops.unshift(stop);
+                                                updateRoute(await routeInfo(newStops));
+                                            }}
+
+                                            onMakeLast={async id => {
+                                                const index = route.stops.findIndex(stop => stop.id === id);
+                                                if (index === -1 || index === route.stops.length - 1) return;
+                                                const newStops = [...route.stops];
+                                                const [stop] = newStops.splice(index, 1);
+                                                newStops.push(stop);
+                                                updateRoute(await routeInfo(newStops));
+                                            }}
                                         />
                                     ))
                                 }
                             </div>
                             <div className="col-12 col-xl-7">
-                                {/* Map */}
+                                <Map coordinates={route.geometry}/>
                             </div>
                         </div>
                     </div>
+                    <button id="scrolldown" onClick={() => window.scrollBy({ top: document.documentElement.scrollHeight, behavior: "smooth" })}>
+                        <ion-icon name="arrow-down-outline"></ion-icon>
+                    </button>
                 </div>
             }
         </>

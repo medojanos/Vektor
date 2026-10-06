@@ -61,11 +61,14 @@ class Route {
   totalDistance;
   totalDuration;
 
-  constructor({stops} = {}) {
+  geometry;
+
+  constructor({stops, totalDistance, totalDuration, geometry} = {}) {
     this.stops = stops || [];
     this.createdAt = Date.now();
-    this.totalDistance = 0;
-    this.totalDuration = 0;
+    this.totalDistance = totalDistance || 0;
+    this.totalDuration = totalDuration || 0;
+    this.geometry = geometry || 0;
   }
 }
 

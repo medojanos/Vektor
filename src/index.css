@@ -107,3 +107,10 @@ p {
 table {
     width: 100%;
 }
+
+#scrolldown {
+    z-index: 1;
+    position: fixed;
+    bottom: 1rem;
+    right: 1rem;
+}

@@ -3,6 +3,7 @@ import {Route} from "../utils/Objects"
 import { useEffect, useState } from 'react';
 import RouteCard from '../components/RouteCard';
 import importExcel from '../utils/Import.js';
+import routeInfo from '../utils/RouteInfo.js';
 
 export default function Dashboard() {
   const [routes, setRoute] = useState(JSON.parse(localStorage.getItem("routes")) || []); 
@@ -49,9 +50,10 @@ export default function Dashboard() {
                 setLoading(true);
                 try {
                   const stops = await importExcel(file);
-                  startRoute(new Route({stops: stops}));
+                  const route = await routeInfo(stops)
+                  startRoute(new Route({stops: route.stops, totalDistance: route.distance, totalDuration: route.duration, geometry: route.geometry}));
                 } catch (error) {
-                  alert("Error importing Excel file:", error);
+                  alert("Error importing Excel file: " + error.message);
                 } finally {
                   setLoading(false)
                 }
