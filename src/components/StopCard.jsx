@@ -106,7 +106,9 @@ export default function StopCard({stop, onEdit, onDelete, onMoveUp, onMoveDown, 
                     </div>
                     <div className="d-flex justify-content-between">
                         <p>{stop.name}</p>
-                        <span>{Math.round(stop.routeInfo.distanceFromPrevious)} km - {DisplayTime(stop.routeInfo.durationFromPrevious)}</span>
+                        <span>
+                            {Math.round(stop.routeInfo.distanceFromPrevious)} km - {DisplayTime(stop.routeInfo.durationFromPrevious)}
+                        </span>
                     </div>
                     <div id={`details-${stop.id}`} className="collapse">
                         <hr/>

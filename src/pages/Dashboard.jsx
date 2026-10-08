@@ -4,19 +4,54 @@ import { useEffect, useState } from 'react';
 import RouteCard from '../components/RouteCard';
 import importExcel from '../utils/Import.js';
 import routeInfo from '../utils/RouteInfo.js';
+import {fields} from "../utils/Const.js";
 
 export default function Dashboard() {
   const [routes, setRoute] = useState(JSON.parse(localStorage.getItem("routes")) || []); 
   const [loading, setLoading] = useState(false);
+  const [header, setHeader] = useState([]);
+  const [dataHeader, setDataHeader] = useState({});
+  const [file, setFile] = useState();
+  const [headerRow, setHeaderRow] = useState(0);
+
+  useEffect(() => localStorage.setItem("routes", JSON.stringify(routes)), [routes])
 
   useEffect(() => {
-    localStorage.setItem("routes", JSON.stringify(routes));
-  }, [routes])
+    if (!file) return;
+    async function refreshHeader() {
+      setHeader(await importExcel({file: file, headersOnly: true, headerRow: headerRow}))
+    }
+    refreshHeader()
+  }, [file, headerRow])
 
   function startRoute(newRoute) {
-    setRoute([...routes, newRoute]);
+    const updatedRoutes = [...routes, newRoute];
+
+    setRoute(updatedRoutes);
+    localStorage.setItem("routes", JSON.stringify(updatedRoutes));
     localStorage.setItem("selected", JSON.stringify(newRoute));
+
     window.location = "/app";
+  }
+
+  async function loadRoute(file, header, headerRow) {
+    setLoading(true);
+    try {
+      const stops = await importExcel({file: file, columnHeader: header, headerRow: headerRow});
+      const route = await routeInfo(stops.filter(stop => stop.active));
+      startRoute(new Route({
+        stops: route ? route.stops : stops,
+        totalDistance: route && route.distance, 
+        totalDuration: route && route.duration, 
+        geometry: route && route.geometry,
+        dataHeader: dataHeader
+      }));
+    } catch (error) {
+      alert("Error importing Excel file");
+      console.log(error.message);
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -36,35 +71,58 @@ export default function Dashboard() {
         <div className="d-flex align-items-center flex-column mt-5">
           <h2>My routes</h2>
           <p>Create a new route or import one.</p>
-          <div className='text-center mt-2'>
-            <button 
-            onClick={() => {
-              startRoute(new Route());
-            }}>
-              Start planning
-            </button>
-            <input type='file' accept=".xlsx, .xls" onChange={async (e) => {
+          <div className='my-3 row justify-content-center text-center'>
+            {
+              fields.map(field => (
+                <div key={field.key} className='col-auto'>
+                  <b>{field.label}</b><br/>
+                  <select 
+                    className='select'
+                    name={field.key}
+                    onChange={e => setDataHeader({...dataHeader, [field.key]: e.target.value})}
+                    >
+                    <option value="">No column</option>
+                    {
+                      header.map(col => (
+                        <option key={col.number} value={col.number}>
+                          {col.header}
+                        </option>
+                      ))
+                    }
+                  </select>
+                </div>
+              ))
+            }
+          </div>
+          <div className='text-center'>
+            <label htmlFor='header-input'>Skip row(s)</label>
+            <input id='header-input' defaultValue={headerRow} style={{width: 40}} type='tel' onChange={e => setHeaderRow(e.target.value)}></input>
+            <br/>
+            <input id='file-input' type='file' accept=".xlsx, .xls" onChange={async e => {
               const file = e.target.files[0];
               if (file) {
-                setLoading(true);
-                try {
-                  const stops = await importExcel(file);
-                  const route = await routeInfo(stops.filter(stop => stop.active));
-                  startRoute(new Route({
-                    stops: route.stops,
-                    totalDistance: route.distance, 
-                    totalDuration: route.duration, 
-                    geometry: route.geometry
-                  }));
-                } catch (error) {
-                  alert("Error importing Excel file: " + error.message);
-                } finally {
-                  setLoading(false)
-                }
+                setFile(file);
               }
             }}/>
+            <a type='button' onClick={() => {
+              setDataHeader({});
+              setHeader([]);
+              setFile();
+              document.getElementById("file-input").value = "";
+            }}>
+              <ion-icon name="close"></ion-icon>
+            </a>
+            <button 
+              onClick={() => {
+                file ?
+                loadRoute(file, dataHeader, headerRow)
+                :
+                startRoute(new Route())
+              }}>
+                Start planning
+            </button>
           </div>
-          <div className="mt-3">
+          <div className="mt-4">
             {
               routes.length != 0
               ?

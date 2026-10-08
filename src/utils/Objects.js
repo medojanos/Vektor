@@ -16,7 +16,7 @@ class Location {
     this.city = city || "";
     this.address = address || "";
     this.addressOther = addressOther || "";
-    this.fullAddress = `${postalCode || ""} ${city} ${address || ""} ${addressOther || ""}`;
+    this.fullAddress = `${postalCode || ""} ${city || ""} ${address || ""} ${addressOther || ""}`;
     this.coordinates = coordinates || null
   }
 }

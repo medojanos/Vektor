@@ -114,3 +114,12 @@ table {
     bottom: 1rem;
     right: 1rem;
 }
+
+.select {
+    width: 100px;
+    border: 1px solid #03346E;
+    background-color: #0D1C42;
+    border-radius: 5px;
+    color: white;
+    padding: 3px;
+}
