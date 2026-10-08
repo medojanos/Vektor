@@ -87,11 +87,11 @@ export default function App() {
         setLoading(true);
         try {
             if (override) {
-                const stops = await importExcel({file: file, columnHeader: dataHeader});
+                const stops = await importExcel({file: file, columnHeader: dataHeader, headerRow: headerRow});
                 await updateRoute({...route, stops: stops});
             };
             if (!override) {
-                const stops = await importExcel({file: file, columnHeader: dataHeader, overrideStops: route.stops});
+                const stops = await importExcel({file: file, columnHeader: dataHeader, headerRow: headerRow, overrideStops: route.stops});
                 await updateRoute({...route, stops: [...route.stops, ...stops]});
             };
         } catch (error) {
@@ -196,7 +196,7 @@ export default function App() {
                                 const file = e.target.files[0];
                                 if (file) {
                                     setFile(file);
-                                    setHeader(await importExcel({file: file, headersOnly: true }));
+                                    setHeader(await importExcel({file: file, headersOnly: true, headerRow: headerRow}));
                                     setDataHeader({});
                                 }
                             }}/>

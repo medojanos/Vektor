@@ -22,7 +22,7 @@ export default function importExcel({file, overrideStops, columnHeader, headersO
         });
 
         if (headersOnly) {
-          const headers = rows[headerRow].map((column, index) => ({
+          const headers = rows[headerRow-1].map((column, index) => ({
             header: column,
             number: index
           }));
