@@ -123,3 +123,16 @@ table {
     color: white;
     padding: 3px;
 }
+
+#stop-form input {
+    max-width: 140px;
+}
+
+hr {
+    color: #00BFFF;
+}
+
+.button-secondary {
+    background-color: #0D1C42;
+    border: 1px solid #03346E;
+}

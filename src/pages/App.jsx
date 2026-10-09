@@ -19,7 +19,7 @@ export default function App() {
     const [header, setHeader] = useState([]);
     const [dataHeader, setDataHeader] = useState({});
     const [file, setFile] = useState();
-    const [headerRow, setHeaderRow] = useState(0);
+    const [headerRow, setHeaderRow] = useState(1);
 
     useEffect(() => {
         const checkScroll = () => {
@@ -42,6 +42,14 @@ export default function App() {
             window.removeEventListener("scroll", checkScroll);
         };
     }, []);
+
+    useEffect(() => {
+        if (!file) return;
+        async function refreshHeader() {
+          setHeader(await importExcel({file: file, headersOnly: true, headerRow: headerRow}))
+        }
+        refreshHeader()
+    }, [file, headerRow])
 
     useEffect(() => {
         let routes = JSON.parse(localStorage.getItem("routes"));
@@ -161,7 +169,35 @@ export default function App() {
                         </a>
                     </h4>
                     <div id="import" className="collapse">
-                        <div className='my-3 row text-center justify-content-center'>
+                        <div className="d-flex align-items-center">
+                            <input style={{width: 280}}id="file-input" type='file' accept=".xlsx, .xls" onChange={async e => {
+                                const file = e.target.files[0];
+                                if (file) {
+                                    setFile(file);
+                                    setHeader(await importExcel({file: file, headersOnly: true, headerRow: headerRow}));
+                                    setDataHeader({});
+                                }
+                            }}/>
+                            <a style={{fontSize: 25}} type="button" onClick={() => {
+                                setHeader([]);
+                                setFile();
+                                setHeaderRow(1);
+                                document.getElementById("file-input").value = "";
+                            }}>
+                                <ion-icon name="close"></ion-icon>
+                            </a>
+                        </div>
+                        <div className="my-3 d-flex justify-content-around align-items-center">
+                            <div>
+                                <label htmlFor='header-input'>Skip row(s)</label>
+                                <input placeholder="0" id='header-input' value={headerRow} style={{width: 40}} type='tel' onChange={e => setHeaderRow(e.target.value)}></input>
+                            </div>
+                            <div>
+                                <label htmlFor="override">Override everything</label>
+                                <input id="override" type="checkbox" checked={override} onChange={e => setOverride(e.target.checked)}></input>
+                            </div>
+                        </div>
+                        <div className='my-2 row text-center justify-content-center'>
                             {
                             fields.map(field => (
                                 <div key={field.key} className='col-auto'>
@@ -169,7 +205,7 @@ export default function App() {
                                 <select 
                                     className='select'
                                     name={field.key}
-                                    value={dataHeader?.[field.key] || ""}
+                                    defaultValue={dataHeader?.[field.key] || ""}
                                     onChange={e => setDataHeader({...dataHeader, [field.key]: e.target.value})}
                                 >
                                     <option value="">No column</option>
@@ -185,34 +221,10 @@ export default function App() {
                             ))
                             }
                         </div>
-                        <div>
-                            <label htmlFor='header-input'>Skip row(s)</label>
-                            <input className="mb-3" id='header-input' defaultValue={headerRow} style={{width: 40}} type='tel' onChange={e => setHeaderRow(e.target.value)}></input>
-                            <br/>
-                            <label htmlFor="override">Override existing stops</label>
-                            <input className="mb-3" id="override" type="checkbox" checked={override} onChange={e => setOverride(e.target.checked)}></input>
-                            <br/>
-                            <input style={{width: 280}} className="my-2" id="file-input" type='file' accept=".xlsx, .xls" onChange={async e => {
-                                const file = e.target.files[0];
-                                if (file) {
-                                    setFile(file);
-                                    setHeader(await importExcel({file: file, headersOnly: true, headerRow: headerRow}));
-                                    setDataHeader({});
-                                }
-                            }}/>
-                            <a style={{fontSize: 25}} type="button" onClick={() => {
-                                setHeader([]);
-                                setFile();
-                                document.getElementById("file-input").value = "";
-                            }}>
-                                <ion-icon name="close"></ion-icon>
-                            </a>
-                            <br/>
-                            <button className="my-2" onClick={() => handleImport()}>Load</button>
-                        </div>
+                        <button className="my-2" onClick={() => handleImport()}>Load</button>
                     </div>
                     <div className="box mt-3">
-                        <h3>{route.stops[0]?.location.city || "No starting location"} ➔ {route.stops[route.stops.length-1]?.location.city || "No destination"}</h3>
+                        <h3>{route.stops[0]?.location.city || "No starting location"} ➔ {route.stops.filter(stop => stop.active)[route.stops.filter(stop => stop.active).length-1]?.location.city || "No destination"}</h3>
                         <hr/>
                         <table className="text-center">
                             <thead>

@@ -22,13 +22,12 @@ export default function importExcel({file, overrideStops, columnHeader, headersO
         });
 
         if (headersOnly) {
-          const headers = rows[headerRow-1].map((column, index) => ({
+          const headers = rows[headerRow-1 < 0 ? 0 : headerRow-1].map((column, index) => ({
             header: column,
             number: index
           }));
 
-          resolve(headers);
-          return;
+          return resolve(headers);
         }
 
         const seenOrders = new Set(
@@ -83,7 +82,7 @@ export default function importExcel({file, overrideStops, columnHeader, headersO
     };
 
     reader.onerror = () => {
-      reject(new Error("Failed to read Excel file."));
+      reject(new Error("Failed to read Excel file"));
     };
 
     reader.readAsArrayBuffer(file);
