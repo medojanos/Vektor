@@ -41,7 +41,10 @@ export default function Dashboard() {
       const stops = await importExcel({file: file, columnHeader: header, headerRow: headerRow});
       const route = await routeInfo(stops.filter(stop => stop.active));
       startRoute(new Route({
-        stops: route ? route.stops : stops,
+        stops: route ? [
+          ...route.stops,
+          ...stops.filter(stop => !stop.active)
+        ] : stops,
         totalDistance: route && route.distance, 
         totalDuration: route && route.duration, 
         geometry: route && route.geometry,                                                                                                                                                                                                                                                                                                                                                                                                 

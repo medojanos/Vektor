@@ -28,8 +28,7 @@ export default function App() {
             const scrollPosition = window.scrollY;
 
             const hasScroll = scrollHeight > viewportHeight;
-            const atBottom =
-                viewportHeight + scrollPosition >= scrollHeight - 10;
+            const atBottom = viewportHeight + scrollPosition >= scrollHeight - 10;
 
             setShowScrollDown(hasScroll && !atBottom);
         };
@@ -38,9 +37,7 @@ export default function App() {
 
         window.addEventListener("scroll", checkScroll);
 
-        return () => {
-            window.removeEventListener("scroll", checkScroll);
-        };
+        return () => window.removeEventListener("scroll", checkScroll);
     }, []);
 
     useEffect(() => {
