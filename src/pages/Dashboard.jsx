@@ -78,7 +78,7 @@ export default function Dashboard() {
           <div className='container mt-3'>
             <div className='row justify-content-center gy-3'>
               <div className='col-12 col-md-auto d-flex flex-column'>
-                <div className='d-flex align-items-center mb-2'>
+                <div className='d-flex align-items-center justify-content-center mb-2'>
                   <input id='file-input' type='file' accept=".xlsx, .xls" onChange={async e => {
                     const file = e.target.files[0];
                       if (file) {
@@ -93,7 +93,7 @@ export default function Dashboard() {
                     document.getElementById("file-input").value = "";
                   }}><ion-icon name="close"></ion-icon></a>
                 </div>
-                <div className='mt-auto d-flex justify-content-between'>
+                <div className='mt-auto d-flex justify-content-around'>
                   <div>
                     <label htmlFor='header-input'>Skip row(s)</label>
                     <input placeholder='0' id='header-input' defaultValue={headerRow} style={{width: 40}} type='tel' onChange={e => setHeaderRow(e.target.value)}></input>
@@ -110,10 +110,10 @@ export default function Dashboard() {
                 </div>
               </div>
               {file && <div className='col-12 col-md'>
-                <div className='row justify-content-center'>
+                <div className='row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 justify-content-center'>
                   {
                     fields.map(field => (
-                      <div key={field.key} className='col-auto'>
+                      <div key={field.key} className='col'>
                         <b>{field.label}</b><br/>
                         <select 
                           className='select'

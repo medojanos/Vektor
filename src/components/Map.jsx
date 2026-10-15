@@ -21,12 +21,12 @@ export default function Map({coordinates, stops}) {
     }).addTo(map);
 
     
-    stops.forEach(stop => {
+    stops.forEach((stop, index) => {
       const { lat, lon } = stop.location.coordinates;
 
       L.marker([lat, lon])
         .addTo(map)
-        .bindPopup(stop.location.city);
+        .bindPopup(`${index + 1}. ${stop.location.city}`);
     });
     
 
