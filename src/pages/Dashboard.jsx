@@ -1,4 +1,4 @@
-import {Link} from 'react-router-dom'
+import {Link, useNavigate} from 'react-router-dom'
 import {Route} from "../utils/Objects"
 import { useEffect, useState } from 'react';
 import RouteCard from '../components/RouteCard';
@@ -14,6 +14,8 @@ export default function Dashboard() {
   const [dataHeader, setDataHeader] = useState({});
   const [file, setFile] = useState();
   const [headerRow, setHeaderRow] = useState(1);
+
+  const navigate = useNavigate();
 
   useEffect(() => localStorage.setItem("routes", JSON.stringify(routes)), [routes])
 
@@ -32,7 +34,7 @@ export default function Dashboard() {
     localStorage.setItem("routes", JSON.stringify(updatedRoutes));
     localStorage.setItem("selected", JSON.stringify(newRoute));
 
-    window.location = "/app";
+    navigate("/app");
   }
 
   async function loadRoute(file, header, headerRow) {
@@ -79,7 +81,7 @@ export default function Dashboard() {
             <div className='row justify-content-center gy-3'>
               <div className='col-12 col-md-auto d-flex flex-column'>
                 <div className='d-flex align-items-center justify-content-center mb-2'>
-                  <input id='file-input' type='file' accept=".xlsx, .xls" onChange={async e => {
+                  <input style={{minWidth: 0, width: "100%"}} id='file-input' type='file' accept=".xlsx, .xls" onChange={async e => {
                     const file = e.target.files[0];
                       if (file) {
                         setFile(file);
