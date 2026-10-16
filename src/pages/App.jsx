@@ -1,4 +1,4 @@
-import {useState, useEffect, act} from "react"
+import {useState, useEffect} from "react"
 import { Route, Stop } from "../utils/Objects"
 import StopCard from "../components/StopCard"
 import {Link} from "react-router-dom"

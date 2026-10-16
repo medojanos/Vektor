@@ -31,7 +31,7 @@ export default function Dashboard() {
     const updatedRoutes = [...routes, newRoute];
 
     setRoute(updatedRoutes);
-    localStorage.setItem("routes", JSON.stringify(updatedRoutes));
+    
     localStorage.setItem("selected", JSON.stringify(newRoute));
 
     navigate("/app");

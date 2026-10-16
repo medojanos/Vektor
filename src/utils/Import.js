@@ -40,6 +40,7 @@ export default function importExcel({file, overrideStops, columnHeader, headersO
           .filter(row => row[columnHeader?.deliveryPrice] !== "0")
           .filter(row => !seenOrders.has(row[columnHeader.id]))
           .map(row => {
+            if (!columnHeader?.city) return row
             row[columnHeader.city] = row[columnHeader.city].replace("ker.", "kerület");
             return row;
           })
