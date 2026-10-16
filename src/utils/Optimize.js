@@ -18,7 +18,7 @@ export default async function optimizeRoute(stops) {
         `&geometries=geojson`;
 
         const response = await fetch(url);
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        if (!response.ok) throw new Error(response.status);
         const data = await response.json();
 
         const optimizedStops = stops
@@ -32,7 +32,7 @@ export default async function optimizeRoute(stops) {
         return routeInfo(optimizedStops);
 
     } catch (error) {
-        alert("Error optimizing route: " + error.message);
+        alert("Error optimizing route " + error.message);
         return null;
     }
 }

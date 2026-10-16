@@ -73,7 +73,7 @@ export default function importExcel({file, overrideStops, columnHeader, headersO
                 active: Boolean(coordinates),
               }
             ));
-          await sleep(1000);
+          await sleep(1100);
         }
         resolve(stops);
       } catch (error) {

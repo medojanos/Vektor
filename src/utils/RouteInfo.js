@@ -1,5 +1,7 @@
 export default async function routeInfo(stops) {
     try {
+        if (stops.length < 2) return null;
+
         const coordinates = stops
         .map(stop => {
             const { lat, lon } = stop.location.coordinates;
@@ -7,12 +9,10 @@ export default async function routeInfo(stops) {
         })
         .join(";");
 
-        const url =
-        `https://router.project-osrm.org/route/v1/driving/${coordinates}` +
-        `?overview=full&geometries=geojson&steps=true`;
+        const url = `https://router.project-osrm.org/route/v1/driving/${coordinates}?overview=full&geometries=geojson&steps=true`;
 
         const response = await fetch(url);
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        if (!response.ok) throw new Error(response.status);
         const data = await response.json();
 
         const trip = data.routes[0];
@@ -34,8 +34,7 @@ export default async function routeInfo(stops) {
         };
 
     } catch (error) {
-        alert("Error getting route information");
-        console.log(error.message)
+        alert("Error getting route information " + error.message);
         return null;
     }
 }

@@ -53,8 +53,7 @@ export default function Dashboard() {
         dataHeader: dataHeader
       }));
     } catch (error) {
-      alert("Error importing Excel file");
-      console.log(error.message);
+      alert("Error importing Excel file " + error.message);
     } finally {
       setLoading(false)
     }

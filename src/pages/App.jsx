@@ -8,7 +8,8 @@ import displayTime from "../utils/DisplayTime.js"
 import optimizeRoute from "../utils/Optimize.js"
 import routeInfo from "../utils/RouteInfo.js"
 import Map from "../components/Map.jsx"
-import {fields} from "../utils/Const.js";
+import {fields} from "../utils/Const.js"
+import StartEnd from "../utils/StartEnd.js"
 
 export default function App() {
     const [route, setRoute] = useState(JSON.parse(localStorage.getItem("selected")) || new Route());
@@ -56,7 +57,6 @@ export default function App() {
         localStorage.setItem("routes", JSON.stringify(routes));
         localStorage.setItem("selected", JSON.stringify(route));
     }, [route])
-
     
     async function updateRoute(newRoute) {
         const routeData = await routeInfo(newRoute.stops.filter(stop => stop.active));
@@ -72,7 +72,7 @@ export default function App() {
                 };
             }
 
-            const updatedStop = routeData.stops.find(
+            const updatedStop = routeData?.stops.find(
                 stop => stop.id === originalStop.id
             );
 
@@ -82,9 +82,9 @@ export default function App() {
         setRoute(prev => ({
             ...prev,
             stops: updatedStops,
-            geometry: routeData.geometry,
-            totalDistance: routeData.distance,
-            totalDuration: routeData.duration
+            geometry: routeData && routeData?.geometry,
+            totalDistance: routeData && routeData?.distance,
+            totalDuration: routeData && routeData?.duration
         }));
     }
 
@@ -100,8 +100,7 @@ export default function App() {
                 await updateRoute({...route, stops: [...route.stops, ...stops]});
             };
         } catch (error) {
-            alert("Error importing Excel file");
-            console.log(error.message)
+            alert("Error importing Excel file " + error.message);
         } finally {
             setLoading(false);
         }
@@ -194,10 +193,10 @@ export default function App() {
                                 <input id="override" type="checkbox" checked={override} onChange={e => setOverride(e.target.checked)}></input>
                             </div>
                         </div>
-                        <div className='my-2 row text-center justify-content-center'>
+                        <div className='my-2 row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-lg-6 text-center justify-content-center'>
                             {
                             fields.map(field => (
-                                <div key={field.key} className='col-auto'>
+                                <div key={field.key} className='col'>
                                 <b>{field.label}</b><br/>
                                 <select 
                                     className='select'
@@ -221,7 +220,7 @@ export default function App() {
                         <button className="my-2" onClick={() => handleImport()}>Load</button>
                     </div>
                     <div className="box mt-3">
-                        <h3>{route.stops[0]?.location.city || "No starting location"} ➔ {route.stops.filter(stop => stop.active)[route.stops.filter(stop => stop.active).length-1]?.location.city || "No destination"}</h3>
+                        <h3>{StartEnd(route).start + ' → ' + StartEnd(route).end}</h3>
                         <hr/>
                         <table className="text-center">
                             <thead>
@@ -349,7 +348,10 @@ export default function App() {
                                 }
                             </div>
                             <div className="col-12 col-xl-7">
-                                <Map coordinates={route.geometry} stops={route.stops.filter(stop => stop.active)}/>
+                                {
+                                    route.stops.filter(stop => stop.active).length > 1 &&
+                                    <Map coordinates={route.geometry} stops={route.stops.filter(stop => stop.active)}/>
+                                }
                             </div>
                         </div>
                     </div>
