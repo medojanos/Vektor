@@ -93,7 +93,7 @@ function StopCard({stop, onEdit, onDelete, onMoveUp, onMoveDown, onMakeFirst, on
                             onChange={() => onSelect && onSelect(stop.id)}
                         />
                         <div className="mx-3">
-                            <button className="button-transparent" id={`menu-${stop.id}`} style={{color: "inherit"}} data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <button type="button" className="button-transparent" id={`menu-${stop.id}`} style={{color: "inherit"}} data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 <ion-icon name="ellipsis-horizontal"></ion-icon>
                             </button>
                             <div className="dropdown-menu box" aria-labelledby={`menu-${stop.id}`}>
@@ -107,7 +107,7 @@ function StopCard({stop, onEdit, onDelete, onMoveUp, onMoveDown, onMakeFirst, on
                                 }
                             </div>
                         </div>
-                        <button className="button-transparent" onClick={() => setExpanded(prev => !prev)} role="button">
+                        <button type="button" className="button-transparent" onClick={() => setExpanded(prev => !prev)}>
                             <ion-icon style={{fontSize: 25}} name="information-circle-outline"></ion-icon>
                         </button>
                     </div>

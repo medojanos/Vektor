@@ -20,9 +20,10 @@ export default function importExcel({file, overrideStops, columnHeader, headersO
           header: 1,
           defval: ""
         });
+        const headerRowNumber = Math.max(1, Math.trunc(Number(headerRow) || 1));
 
         if (headersOnly) {
-          const headers = rows[headerRow-1 < 0 ? 0 : headerRow-1].map((column, index) => ({
+          const headers = (rows[headerRowNumber - 1] || []).map((column, index) => ({
             header: column,
             number: index
           }));
@@ -31,14 +32,24 @@ export default function importExcel({file, overrideStops, columnHeader, headersO
         }
 
         const seenOrders = new Set(
-          overrideStops?.map(stop => stop.id) ?? []
+          (overrideStops || [])
+            .map(stop => stop.id)
+            .filter(id => id !== undefined && id !== null && id !== "")
+            .map(String)
         );
 
         const validRows = rows
-          .slice(headerRow)
+          .slice(headerRowNumber)
           .filter(row => row.some(cell => cell !== ""))
           .filter(row => row[columnHeader?.deliveryPrice] !== "0")
-          .filter(row => !seenOrders.has(row[columnHeader.id]))
+          .filter(row => {
+            const id = row[columnHeader?.id];
+            if (id === undefined || id === null || id === "") return true;
+            const normalizedId = String(id);
+            if (seenOrders.has(normalizedId)) return false;
+            seenOrders.add(normalizedId);
+            return true;
+          })
           .map(row => {
             if (!columnHeader?.city) return row
             row[columnHeader.city] = row[columnHeader.city].replace("ker.", "kerület");

@@ -112,6 +112,11 @@ input[type="file"]::file-selector-button {
     cursor: pointer;
 }
 
+textarea {
+    resize: vertical;
+    width: 100%;
+}
+
 p {
     margin: 0;
 }

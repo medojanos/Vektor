@@ -11,10 +11,12 @@ import Map from "../components/Map.jsx"
 import {fields} from "../utils/Const.js"
 import StartEnd from "../utils/StartEnd.js"
 import autoMatchHeaders from "../utils/AutoMatch.js"
+import {addRouteAndSelect, getSelectedRoute, persistCurrentRoute} from "../utils/RouteStorage.js"
 
 export default function App() {
     const navigate = useNavigate();
-    const [route, setRoute] = useState(JSON.parse(localStorage.getItem("selected")) || new Route());
+    const [route, setRoute] = useState(new Route());
+    const [routeReady, setRouteReady] = useState(false);
     const [newStop, setNewStop] = useState({});
     const [override, setOverride] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -23,6 +25,19 @@ export default function App() {
     const [file, setFile] = useState();
     const [headerRow, setHeaderRow] = useState(1);
     const [selectedStops, setSelectedStops] = useState([]);
+
+    useEffect(() => {
+        async function loadRoute() {
+            try {
+                setRoute(await getSelectedRoute() || new Route());
+            } catch (error) {
+                alert("Error loading saved route: " + error.message);
+            } finally {
+                setRouteReady(true);
+            }
+        }
+        loadRoute();
+    }, []);
 
     useEffect(() => {
         if (!file) return;
@@ -36,13 +51,11 @@ export default function App() {
     }, [file, headerRow]);
 
     useEffect(() => {
-        let routes = JSON.parse(localStorage.getItem("routes"));
-        routes.map((oldRoute, index) => {
-            if (oldRoute.createdAt == route.createdAt) routes[index] = route;
-        })  
-        localStorage.setItem("routes", JSON.stringify(routes));
-        localStorage.setItem("selected", JSON.stringify(route));
-    }, [route])
+        if (!routeReady) return;
+        persistCurrentRoute(route).catch(error => {
+            alert("Error saving route: " + error.message);
+        });
+    }, [route, routeReady])
     
     async function updateRoute(newRoute) {
         const routeData = await routeInfo(newRoute.stops.filter(stop => stop.active));
@@ -133,17 +146,14 @@ export default function App() {
     }
 
     async function startRouteWithSelected() {
-        const stopsToUse = route.stops.filter(stop => 
-            selectedStops.some(s => s === stop.id || (typeof s === "object" && s?.id === stop.id))
-        );
-        if (stopsToUse.length === 0) return;
-
         setLoading(true);
+
         try {
-            const activeStops = stopsToUse.filter(stop => stop.active);
+            const stops = route.stops.filter(stop => selectedStops.includes(stop.id));
+            const activeStops = stops.filter(stop => stop.active);
             const routeData = activeStops.length > 1 ? await routeInfo(activeStops) : null;
 
-            const updatedStops = stopsToUse.map(originalStop => {
+            const updatedStops = stops.map(originalStop => {
                 if (!originalStop.active) {
                     return {
                         ...originalStop,
@@ -153,22 +163,20 @@ export default function App() {
                         }
                     };
                 }
-                const updatedStop = routeData?.stops.find(s => s.id === originalStop.id);
+                const updatedStop = routeData?.stops.find(
+                    s => s.id === originalStop.id
+                );
                 return updatedStop ?? originalStop;
             });
 
             const newRoute = new Route({
                 stops: updatedStops,
-                totalDistance: routeData ? routeData.distance : 0,
-                totalDuration: routeData ? routeData.duration : 0,
-                geometry: routeData ? routeData.geometry : []
+                totalDistance: routeData?.distance ?? 0,
+                totalDuration: routeData?.duration ?? 0,
+                geometry: routeData?.geometry ?? []
             });
 
-            const existingRoutes = JSON.parse(localStorage.getItem("routes")) || [];
-            const updatedRoutes = [...existingRoutes, newRoute];
-            localStorage.setItem("routes", JSON.stringify(updatedRoutes));
-            localStorage.setItem("selected", JSON.stringify(newRoute));
-
+            await addRouteAndSelect(newRoute);
             setSelectedStops([]);
             setRoute(newRoute);
             navigate("/app");
@@ -179,8 +187,9 @@ export default function App() {
         }
     }
 
+
     return (
-        loading ? 
+        loading || !routeReady ?
             <div className="d-flex justify-content-center align-items-center flex-grow-1">
                 <svg width={200} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><circle fill="var(--primary)" stroke="var(--primary)" strokeWidth="15" r="15" cx="40" cy="65"><animate attributeName="cy" calcMode="spline" dur="2" values="65;135;65;" keySplines=".5 0 .5 1;.5 0 .5 1" repeatCount="indefinite" begin="-.4"></animate></circle><circle fill="var(--primary)" stroke="var(--primary)" strokeWidth="15" r="15" cx="100" cy="65"><animate attributeName="cy" calcMode="spline" dur="2" values="65;135;65;" keySplines=".5 0 .5 1;.5 0 .5 1" repeatCount="indefinite" begin="-.2"></animate></circle><circle fill="var(--primary)" stroke="var(--primary)" strokeWidth="15" r="15" cx="160" cy="65"><animate attributeName="cy" calcMode="spline" dur="2" values="65;135;65;" keySplines=".5 0 .5 1;.5 0 .5 1" repeatCount="indefinite" begin="0"></animate></circle></svg>
             </div>
@@ -305,20 +314,32 @@ export default function App() {
                             <span className="me-2">Optimize</span><ion-icon name="star"></ion-icon>
                         </button>
                     </div>
-                    <div className="col-12 col-xl-5 order-xl-1">
-                        {selectedStops.length > 0 && (
+                    {selectedStops.length > 0 && (
+                        <div className="col-12 col-xl-5 order-xl-1">
                             <div className="d-flex align-items-center justify-content-between mt-3 mt-xl-0">
-                                <button onClick={startRouteWithSelected} className="d-flex align-items-center button-transparent">
+                                <a type="button" onClick={startRouteWithSelected} className="d-flex align-items-center">
                                     <ion-icon style={{fontSize: 22, marginRight: 10}} name="add-circle"></ion-icon>
                                     <span className="me-2">Make new route</span>
-                                </button>
-                                <button style={{color: "red"}} className="d-flex align-items-center button-transparent" onClick={() => {}}>
-                                    <span className="me-2">Delete stops</span>
+                                </a>
+                                <button style={{color: "red"}} className="d-flex align-items-center button-transparent" onClick={() => {
+                                    const newStops = route.stops.filter(stop => !selectedStops.includes(stop.id));
+                                    setSelectedStops([]);
+                                    updateRoute({...route, stops: newStops});
+                                }}>
+                                    <span className="me-2">Delete selected</span>
                                     <ion-icon style={{fontSize: 22, marginRight: 10}} name="trash"></ion-icon>
                                 </button>
                             </div>
-                        )}
-                    </div>
+                            <div className="d-flex align-items-center justify-content-between mt-3">
+                                <button className="d-flex align-items-center button-transparent" onClick={() => setSelectedStops(route.stops.map(s => s.id))}>
+                                    <span className="me-2">Select all</span>
+                                </button>
+                                <button className="d-flex align-items-center button-transparent" onClick={() => setSelectedStops([])}>
+                                    <span className="me-2">Deselect all</span>
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
                 <div className="row">
                     <div className="col-12 col-xl-5 overflow-y-scroll" style={{maxHeight: "60vh"}}>
@@ -357,9 +378,9 @@ export default function App() {
                             <input type="number" placeholder="Price" value={newStop.price || ""} onChange={e => setNewStop(prev => ({...prev, price: e.target.value}))}></input>
                             <input type="number" placeholder="Delivery price" value={newStop.deliveryPrice || ""} onChange={e => setNewStop(prev => ({...prev, deliveryPrice: e.target.value}))}></input>
                             <br/><span className="text-secondary">Package:</span><br/>
-                            <textarea style={{width: "100%"}} placeholder="Parcel" value={newStop.parcel || ""} onChange={e => setNewStop(prev => ({...prev, parcel: e.target.value}))}></textarea>
-                            <br/>
-                            <input placeholder="Note" value={newStop.note || ""} onChange={e => setNewStop(prev => ({...prev, note: e.target.value}))}></input>
+                            <textarea placeholder="Parcel" value={newStop.parcel || ""} onChange={e => setNewStop(prev => ({...prev, parcel: e.target.value}))}></textarea>
+                            <br/><span className="text-secondary">Note:</span><br/>
+                            <textarea placeholder="Note" value={newStop.note || ""} onChange={e => setNewStop(prev => ({...prev, note: e.target.value}))}></textarea>
                             <br/><span className="text-secondary">Address:</span><br/>
                             <input type="number" placeholder="Zip code" value={newStop.postalCode || ""} onChange={e => setNewStop(prev => ({...prev, postalCode: e.target.value}))}></input>
                             <input required placeholder="City" value={newStop.city || ""} onChange={e => setNewStop(prev => ({...prev, city: e.target.value}))}></input>
@@ -416,7 +437,7 @@ export default function App() {
                             ))
                         }
                     </div>
-                    <div className="col-12 col-xl-7">
+                    <div className="col-12 col-xl-7 mt-5 mt-xl-0">
                         {
                             route.stops.filter(stop => stop.active).length > 1 &&
                             <Map coordinates={route.geometry} stops={route.stops.filter(stop => stop.active)}/>
